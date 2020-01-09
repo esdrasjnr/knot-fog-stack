@@ -1,0 +1,152 @@
+version: "3"
+
+services:
+  # connector:
+  #   image: cesarbr/knot-fog-connector
+  #   env_file: '../env.d/knot-connector.env'
+  #   depends_on:
+  #     - rabbitmq
+  #   deploy:
+  #     replicas: 1
+  #     labels:
+  #       - traefik.enable=true
+  #       - traefik.frontend.rule=HostRegexp:connector,connector.{domain:[a-zA-Z0-9.]+}
+  #       - traefik.port=80
+
+  babeltower:
+    image: cesarbr/knot-babeltower:dev
+    env_file: '../env.d/knot-babeltower.env'
+    volumes:
+      - ../../knot-babeltower:/usr/src/app
+    depends_on:
+      - rabbitmq
+      - users
+      - things
+    deploy:
+      replicas: 1
+      labels:
+        - traefik.enable=true
+        - traefik.frontend.rule=HostRegexp:bt,bt.{domain:[a-zA-Z0-9.]+}
+        - traefik.port=8080
+
+  users:
+    image: mainflux/users:0.10.0
+    env_file: '../env.d/mainflux-users.env'
+    depends_on:
+      - users-db
+    deploy:
+      replicas: 1
+      labels:
+        - traefik.enable=true
+        - traefik.frontend.rule=HostRegexp:users,users.{domain:[a-zA-Z0-9.]+}
+        - traefik.port=8180
+
+  things:
+    image: mainflux/things:0.10.0
+    env_file: '../env.d/mainflux-things.env'
+    depends_on:
+      - things-db
+      - users
+    deploy:
+      replicas: 1
+      labels:
+        - traefik.enable=true
+        - traefik.frontend.rule=HostRegexp:things,things.{domain:[a-zA-Z0-9.]+}
+        - traefik.port=8182
+
+  authn:
+    image: mainflux/authn:0.10.0
+    env_file: '../env.d/mainflux-authn.env'
+    depends_on:
+      - authn-db
+    deploy:
+      replicas: 1
+      labels:
+        - traefik.enable=true
+        - traefik.frontend.rule=HostRegexp:authn,authn.{domain:[a-zA-Z0-9.]+}
+        - traefik.port=8183
+
+  things-redis:
+    image: redis:5.0-alpine
+    deploy:
+      resources:
+        limits:
+          memory: 300M
+
+  es-redis:
+    image: redis:5.0-alpine
+    deploy:
+      resources:
+        limits:
+          memory: 300M
+
+  jaeger:
+    image: jaegertracing/all-in-one:1.13
+    env_file: '../env.d/mainflux-jaeger.env'
+    deploy:
+      replicas: 1
+      labels:
+        - traefik.enable=true
+        - traefik.frontend.rule=HostRegexp:jaeger,jaeger.{domain:[a-zA-Z0-9.]+}
+        - traefik.port=16686
+
+  things-db:
+    image: postgres
+    environment:
+      - POSTGRES_USER=mainflux
+      - POSTGRES_PASSWORD=mainflux
+      - POSTGRES_DB=things
+    volumes:
+      - mainflux-things-db-volume:/var/lib/postgresql/data
+
+  users-db:
+    image: postgres
+    environment:
+      - POSTGRES_USER=mainflux
+      - POSTGRES_PASSWORD=mainflux
+      - POSTGRES_DB=users
+    volumes:
+      - mainflux-users-db-volume:/var/lib/postgresql/data
+
+  authn-db:
+    image: postgres
+    environment:
+      - POSTGRES_USER=mainflux
+      - POSTGRES_PASSWORD=mainflux
+      - POSTGRES_DB=authn
+    volumes:
+      - mainflux-authn-db-volume:/var/lib/postgresql/data
+
+  rabbitmq:
+    image: rabbitmq
+    environment:
+      - RABBITMQ_DEFAULT_USER=knot
+      - RABBITMQ_DEFAULT_PASS=knot
+    deploy:
+      replicas: 1
+    ports:
+      - 5672:5672
+
+  traefik:
+    image: traefik:v1.7
+    command: >
+      traefik
+        --docker
+        --docker.watch
+        --docker.swarmMode
+        --docker.exposedByDefault=false
+        --entryPoints='Name:http Address::80 Redirect.EntryPoint:https'
+        --entryPoints='Name:https Address::443 TLS'
+        --defaultEntryPoints=http,https
+    ports:
+      - '80:80'
+      - '443:443'
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    deploy:
+      mode: global
+
+volumes:
+  mainflux-things-db-volume:
+  mainflux-users-db-volume:
+  mainflux-authn-db-volume:
