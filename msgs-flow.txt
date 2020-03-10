@@ -1,0 +1,41 @@
+========== LIST DEVICES ==========
+
+WAITING-MESSAGES
+receive "device.cmd.list" message from "fogIn"
+THINGS.LIST-THINGS
+send "device.list" message on "fogOut"
+WAITING-MESSAGES
+
+========== UPDATE SCHEMA ==========
+
+WAITING-MESSAGES
+receive "schema.update" message from "fogIn"
+VERIFY-SCHEMA
+THINGS.UPDATE-THING-DATA
+send "schema.update" message on "connIn"
+send "schema.updated" message on "fogOut"
+WAITING-MESSAGES
+
+========== PUBLISH DATA ==========
+
+WAITING-MESSAGES
+receive "data.publish" message from "fogIn"
+VERIFY-THING-SCHEMA
+send "data.publish" message on "connIn"
+WAITING-MESSAGES
+
+========== REQUEST DATA ==========
+
+WAITING-MESSAGES
+receive "data.request" message from "connOut"
+VERIFY-THING-SCHEMA
+send "data.request" message on "fogOut"
+WAITING-MESSAGES
+
+========== UPDATE DATA ==========
+
+WAITING-MESSAGES
+receive "data.update" message from "connOut"
+VERIFY-THING-SCHEMA
+send "data.update" message on "fogOut"
+WAITING-MESSAGES

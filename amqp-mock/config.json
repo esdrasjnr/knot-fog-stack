@@ -1,0 +1,7 @@
+{
+  "amqp-hostname": "localhost",
+  "amqp-port": 5672,
+  "authorization-token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE1ODY5MjY4ODUsImlhdCI6MTU4Njg5MDg4NSwiaXNzIjoibWFpbmZsdXguYXV0aG4iLCJzdWIiOiJrbm90QGtub3QuY29tIiwidHlwZSI6MH0.nV_pfLWsVFBRqmm-Qjc0-0GTUsU8rwzXa18nx6RQsiE",
+  "users-hostname": "localhost",
+  "users-port": 8080
+}
